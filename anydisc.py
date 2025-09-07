@@ -4,6 +4,8 @@ from discord import app_commands
 from discord.ext import commands
 import google.generativeai as genai
 import aiohttp
+from flask import Flask
+from threading import Thread
 
 # === CONFIG ===
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN") or "YOUR_DISCORD_BOT_TOKEN"
@@ -16,6 +18,20 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # Setup Gemini
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")  # fast + good for text
+
+# --- Flask Keep Alive Webserver ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run():
+    app.run(host="0.0.0.0", port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
 # --- Fetch character image (anime/manga via Jikan) ---
 async def fetch_character_image(name: str):
@@ -64,4 +80,6 @@ async def on_ready():
     await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
 
+# === START BOT + KEEP ALIVE ===
+keep_alive()
 bot.run(DISCORD_TOKEN)
